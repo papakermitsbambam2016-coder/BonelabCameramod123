@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <AssemblyName>QuestCamera</AssemblyName>
+    <RootNamespace>QuestCamera</RootNamespace>
+
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="src/**/*.cs" />
+  </ItemGroup>
+
+  <!--
+    BONELAB/MelonLoader DLL references will be added later.
+    We are deliberately leaving them out until the project
+    structure and code are ready.
+  -->
+
+</Project>
