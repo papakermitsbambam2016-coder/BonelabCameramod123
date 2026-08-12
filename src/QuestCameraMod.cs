@@ -15,9 +15,9 @@ public sealed class QuestCameraMod : MelonMod
     private CameraControls? controls;
     private CameraScreen? screen;
     private CameraView? view;
+    private CameraRecorder? recorder;
 
     private bool sceneReady;
-    private bool systemsInitialized;
 
     private float spawnTimer;
 
@@ -33,7 +33,10 @@ public sealed class QuestCameraMod : MelonMod
             $" Version {PluginInfo.Version}");
 
         MelonLogger.Msg(
-            " Touchscreen Camera Foundation");
+            " Touchscreen Camera");
+
+        MelonLogger.Msg(
+            " Recording System");
 
         MelonLogger.Msg(
             "================================");
@@ -53,7 +56,6 @@ public sealed class QuestCameraMod : MelonMod
         string sceneName)
     {
         sceneReady = true;
-        systemsInitialized = false;
 
         spawnTimer = 2f;
 
@@ -118,14 +120,15 @@ public sealed class QuestCameraMod : MelonMod
         if (controls == null)
             return;
 
-        /*
-         * Create the camera view system.
-         */
         GameObject? cameraObject =
             physicalCamera.GameObject;
 
         if (cameraObject == null)
             return;
+
+        // =========================
+        // CAMERA VIEW
+        // =========================
 
         view =
             cameraObject.AddComponent<CameraView>();
@@ -133,9 +136,23 @@ public sealed class QuestCameraMod : MelonMod
         view.Initialize(
             physicalCamera);
 
-        /*
-         * Create the touchscreen system.
-         */
+        // =========================
+        // RECORDER
+        // =========================
+
+        recorder =
+            cameraObject.AddComponent<CameraRecorder>();
+
+        recorder.Initialize(
+            view);
+
+        controls.SetRecorder(
+            recorder);
+
+        // =========================
+        // TOUCHSCREEN
+        // =========================
+
         screen =
             cameraObject.AddComponent<CameraScreen>();
 
@@ -143,15 +160,14 @@ public sealed class QuestCameraMod : MelonMod
             physicalCamera,
             controls);
 
-        /*
-         * Create the physical grab component.
-         */
+        // =========================
+        // GRABBABLE CAMERA
+        // =========================
+
         CameraGrabbable? grabbable =
             cameraObject.AddComponent<CameraGrabbable>();
 
         grabbable.Initialize();
-
-        systemsInitialized = true;
 
         MelonLogger.Msg(
             "================================");
@@ -163,17 +179,24 @@ public sealed class QuestCameraMod : MelonMod
             "Physical camera created.");
 
         MelonLogger.Msg(
-            "Touchscreen created.");
-
-        MelonLogger.Msg(
             "Camera view created.");
 
         MelonLogger.Msg(
-            "Grab system initialized.");
+            "Recorder created.");
+
+        MelonLogger.Msg(
+            "Touchscreen created.");
+
+        MelonLogger.Msg(
+            "Grab component created.");
 
         MelonLogger.Msg(
             "================================");
     }
+
+    // =========================
+    // CAMERA CONTROLS
+    // =========================
 
     public void ToggleFreeze()
     {
@@ -190,10 +213,24 @@ public sealed class QuestCameraMod : MelonMod
         controls?.ToggleRecording();
     }
 
+    public void StartRecording()
+    {
+        controls?.StartRecording();
+    }
+
+    public void StopRecording()
+    {
+        controls?.StopRecording();
+    }
+
     public void TakePhoto()
     {
         controls?.Photo();
     }
+
+    // =========================
+    // POV
+    // =========================
 
     public void TogglePOV()
     {
@@ -210,6 +247,10 @@ public sealed class QuestCameraMod : MelonMod
         view?.SetPlayerPov();
     }
 
+    // =========================
+    // ZOOM
+    // =========================
+
     public void ZoomIn()
     {
         controls?.ZoomIn();
@@ -220,26 +261,42 @@ public sealed class QuestCameraMod : MelonMod
         controls?.ZoomOut();
     }
 
+    // =========================
+    // CLEANUP
+    // =========================
+
     public override void OnApplicationQuit()
     {
+        if (recorder != null)
+        {
+            recorder.Dispose();
+            recorder = null;
+        }
+
         if (controls != null)
+        {
             controls.Dispose();
+            controls = null;
+        }
 
         if (view != null)
+        {
             view.DestroyView();
+            view = null;
+        }
 
         if (screen != null)
+        {
             screen.DestroyScreen();
+            screen = null;
+        }
 
         if (physicalCamera != null)
+        {
             physicalCamera.Destroy();
-
-        physicalCamera = null;
-        controls = null;
-        screen = null;
-        view = null;
+            physicalCamera = null;
+        }
 
         sceneReady = false;
-        systemsInitialized = false;
     }
 }
