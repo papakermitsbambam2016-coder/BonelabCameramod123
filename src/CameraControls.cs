@@ -7,18 +7,24 @@ internal sealed class CameraControls
 {
     private readonly PhysicalCamera camera;
 
-    private bool recording;
+    private CameraRecorder? recorder;
 
-    public bool IsRecording => recording;
+    public bool IsRecording =>
+        recorder != null &&
+        recorder.IsRecording;
 
-    public CameraControls(PhysicalCamera camera)
+    public CameraControls(
+        PhysicalCamera camera)
     {
         this.camera = camera;
     }
 
-    // =========================
-    // FREEZE / UNFREEZE
-    // =========================
+    public void SetRecorder(
+        CameraRecorder cameraRecorder)
+    {
+        recorder =
+            cameraRecorder;
+    }
 
     public void Freeze()
     {
@@ -46,10 +52,6 @@ internal sealed class CameraControls
                 : "QuestCamera: Camera unfrozen.");
     }
 
-    // =========================
-    // CAMERA FLIP
-    // =========================
-
     public void Flip()
     {
         camera.Flip();
@@ -60,137 +62,70 @@ internal sealed class CameraControls
                 : "QuestCamera: Looking forward.");
     }
 
-    // =========================
-    // ZOOM
-    // =========================
-
     public void ZoomIn()
     {
         camera.ZoomIn();
-
-        MelonLogger.Msg(
-            "QuestCamera: Zoom in.");
     }
 
     public void ZoomOut()
     {
         camera.ZoomOut();
-
-        MelonLogger.Msg(
-            "QuestCamera: Zoom out.");
     }
 
-    // =========================
-    // FIELD OF VIEW
-    // =========================
-
-    public void SetFov(float fov)
+    public void SetFov(
+        float fov)
     {
         camera.SetFov(fov);
-
-        MelonLogger.Msg(
-            $"QuestCamera: FOV set to {fov}.");
     }
-
-    // =========================
-    // PHOTO
-    // =========================
 
     public void Photo()
     {
         MelonLogger.Msg(
             "QuestCamera: PHOTO requested.");
 
-        /*
-         * The actual screenshot system will be added
-         * in the next stage.
-         */
+        // Photo system will use the same RenderTexture
+        // as the recorder.
     }
-
-    // =========================
-    // RECORDING
-    // =========================
 
     public void StartRecording()
     {
-        if (recording)
+        if (recorder == null)
+        {
+            MelonLogger.Warning(
+                "QuestCamera: Recorder is not connected.");
+
             return;
+        }
 
-        recording = true;
-
-        MelonLogger.Msg(
-            "QuestCamera: RECORDING STARTED.");
-
-        /*
-         * The actual Quest video recorder will be
-         * connected here later.
-         */
+        recorder.StartRecording();
     }
 
     public void StopRecording()
     {
-        if (!recording)
+        if (recorder == null)
             return;
 
-        recording = false;
-
-        MelonLogger.Msg(
-            "QuestCamera: RECORDING STOPPED.");
-
-        /*
-         * The actual video will be finalized and
-         * saved to Quest storage/gallery later.
-         */
+        recorder.StopRecording();
     }
 
     public void ToggleRecording()
     {
-        if (recording)
-            StopRecording();
-        else
-            StartRecording();
-    }
+        if (recorder == null)
+        {
+            MelonLogger.Warning(
+                "QuestCamera: Recorder is not connected.");
 
-    // =========================
-    // RECORDING STATE
-    // =========================
-
-    public void Update()
-    {
-        if (!recording)
             return;
+        }
 
-        /*
-         * Recording-frame processing will be added
-         * when we implement the actual recorder.
-         */
+        recorder.ToggleRecording();
     }
-
-    // =========================
-    // RESET CAMERA
-    // =========================
-
-    public void ResetCamera()
-    {
-        if (camera.GameObject == null)
-            return;
-
-        camera.Unfreeze();
-
-        MelonLogger.Msg(
-            "QuestCamera: Camera reset.");
-    }
-
-    // =========================
-    // DESTROY
-    // =========================
 
     public void Dispose()
     {
-        if (recording)
-            StopRecording();
+        if (recorder != null)
+            recorder.Dispose();
 
-        MelonLogger.Msg(
-            "QuestCamera: Controls disposed.");
+        recorder = null;
     }
 }
