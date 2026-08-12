@@ -12,10 +12,12 @@ namespace QuestCamera;
 public sealed class QuestCameraMod : MelonMod
 {
     private PhysicalCamera? physicalCamera;
-
     private CameraControls? controls;
+    private CameraScreen? screen;
+    private CameraView? view;
 
     private bool sceneReady;
+    private bool systemsInitialized;
 
     private float spawnTimer;
 
@@ -29,6 +31,9 @@ public sealed class QuestCameraMod : MelonMod
 
         MelonLogger.Msg(
             $" Version {PluginInfo.Version}");
+
+        MelonLogger.Msg(
+            " Touchscreen Camera Foundation");
 
         MelonLogger.Msg(
             "================================");
@@ -48,6 +53,7 @@ public sealed class QuestCameraMod : MelonMod
         string sceneName)
     {
         sceneReady = true;
+        systemsInitialized = false;
 
         spawnTimer = 2f;
 
@@ -72,9 +78,15 @@ public sealed class QuestCameraMod : MelonMod
             {
                 SpawnCamera();
             }
+
+            return;
         }
 
         physicalCamera.Update();
+
+        view?.Update();
+
+        screen?.Update();
     }
 
     private void SpawnCamera()
@@ -85,7 +97,10 @@ public sealed class QuestCameraMod : MelonMod
         if (playerCamera == null)
         {
             MelonLogger.Warning(
-                "QuestCamera: Player camera not found.");
+                "QuestCamera: Player camera not found yet.");
+
+            spawnTimer = 1f;
+
             return;
         }
 
@@ -97,14 +112,134 @@ public sealed class QuestCameraMod : MelonMod
         physicalCamera?.Spawn(
             spawnPosition);
 
+        if (physicalCamera == null)
+            return;
+
+        if (controls == null)
+            return;
+
+        /*
+         * Create the camera view system.
+         */
+        GameObject? cameraObject =
+            physicalCamera.GameObject;
+
+        if (cameraObject == null)
+            return;
+
+        view =
+            cameraObject.AddComponent<CameraView>();
+
+        view.Initialize(
+            physicalCamera);
+
+        /*
+         * Create the touchscreen system.
+         */
+        screen =
+            cameraObject.AddComponent<CameraScreen>();
+
+        screen.Initialize(
+            physicalCamera,
+            controls);
+
+        /*
+         * Create the physical grab component.
+         */
+        CameraGrabbable? grabbable =
+            cameraObject.AddComponent<CameraGrabbable>();
+
+        grabbable.Initialize();
+
+        systemsInitialized = true;
+
         MelonLogger.Msg(
-            "QuestCamera: Camera created.");
+            "================================");
+
+        MelonLogger.Msg(
+            "QuestCamera: CAMERA READY");
+
+        MelonLogger.Msg(
+            "Physical camera created.");
+
+        MelonLogger.Msg(
+            "Touchscreen created.");
+
+        MelonLogger.Msg(
+            "Camera view created.");
+
+        MelonLogger.Msg(
+            "Grab system initialized.");
+
+        MelonLogger.Msg(
+            "================================");
+    }
+
+    public void ToggleFreeze()
+    {
+        controls?.ToggleFreeze();
+    }
+
+    public void FlipCamera()
+    {
+        controls?.Flip();
+    }
+
+    public void ToggleRecording()
+    {
+        controls?.ToggleRecording();
+    }
+
+    public void TakePhoto()
+    {
+        controls?.Photo();
+    }
+
+    public void TogglePOV()
+    {
+        view?.TogglePov();
+    }
+
+    public void CameraPOV()
+    {
+        view?.SetCameraPov();
+    }
+
+    public void PlayerPOV()
+    {
+        view?.SetPlayerPov();
+    }
+
+    public void ZoomIn()
+    {
+        controls?.ZoomIn();
+    }
+
+    public void ZoomOut()
+    {
+        controls?.ZoomOut();
     }
 
     public override void OnApplicationQuit()
     {
-        physicalCamera?.Destroy();
+        if (controls != null)
+            controls.Dispose();
+
+        if (view != null)
+            view.DestroyView();
+
+        if (screen != null)
+            screen.DestroyScreen();
+
+        if (physicalCamera != null)
+            physicalCamera.Destroy();
+
+        physicalCamera = null;
+        controls = null;
+        screen = null;
+        view = null;
 
         sceneReady = false;
+        systemsInitialized = false;
     }
 }
